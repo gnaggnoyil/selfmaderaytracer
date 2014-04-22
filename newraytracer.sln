@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "newraytracer", "newraytracer.vcxproj", "{E302125B-4F29-4104-A148-44B7B1F8864E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E302125B-4F29-4104-A148-44B7B1F8864E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E302125B-4F29-4104-A148-44B7B1F8864E}.Debug|Win32.Build.0 = Debug|Win32
+		{E302125B-4F29-4104-A148-44B7B1F8864E}.Release|Win32.ActiveCfg = Release|Win32
+		{E302125B-4F29-4104-A148-44B7B1F8864E}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
