@@ -24,13 +24,16 @@ public:
 	int getTexCoordIndex(int i);
 	void setMesh(std::tr1::shared_ptr<Mesh> _mesh);
 	std::tr1::shared_ptr<Mesh> getMesh();
+	void setAnimation(int i,const DynamicVector3Type &_animation);
+	DynamicVector3Type getAnimation(int i)const;
 
 	// implements the hit method of the Shape class
-	bool hit(const Ray &r,double tmin,double tmax,double time,HitRecord &record);
+	bool hit(const Ray &r,double tmin,double tmax,double time,HitRecord &record)const;
 private:
 	std::tr1::shared_ptr<Mesh> mesh;
 	int vertexIndex[3];
 	int normalIndex[3];
 	int texCoordIndex[3];
+	DynamicVector3Type animation[6];	// the function that calculates the transform shift of this shape at a certain time
 };
 #endif // _MESH_TRIANGLE_H_

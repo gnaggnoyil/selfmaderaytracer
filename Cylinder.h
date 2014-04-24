@@ -28,14 +28,17 @@ public:
 	double getApexRadius()const;
 	void setMaterial(const Material &_material);
 	Material getMaterial()const;
+	void setAnimation(const DynamicVector3Type &_animation);
+	DynamicVector3Type getAnimation()const;
 
 	// implements the hit method of the Shape class
-	bool hit(const Ray &r,double tmin,double tmax,double time,HitRecord &record);
+	bool hit(const Ray &r,double tmin,double tmax,double time,HitRecord &record)const;
 private:
 	Vector3 base;
 	double baseRadius;
 	Vector3 apex;
 	double apexRadius;
 	Material material;
+	DynamicVector3Type animation;	// the function that calculates the transform shift of this shape at a certain time
 };
 #endif // _CYLINDER_H_

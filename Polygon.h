@@ -21,14 +21,17 @@ public:
 	std::vector<Vector3> getVertex(int i);
 	void setMaterial(const Material &_material);
 	Material getMaterial()const;
+	void setAnimation(const DynamicVector3Type &_animation);
+	DynamicVector3Type getAnimation()const;
 
 	void addVertex(const Vector3 &_vertex);
 	int getVertexNumber();
 
 	// implements the hit method of the Shape class
-	bool hit(const Ray &r,double tmin,double tmax,double time,HitRecord &record);
+	bool hit(const Ray &r,double tmin,double tmax,double time,HitRecord &record)const;
 private:
 	std::vector<Vector3> vertex;
 	Material material;
+	DynamicVector3Type animation;	// the function that calculates the transform shift of this shape at a certain time
 };
 #endif // _POLYGON_H_

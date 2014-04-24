@@ -7,7 +7,7 @@
 #include <memory>
 
 // defines a functor type used to calculate the vector3 point according time;
-typedef std::function<Vector3(double)> DynamicVector3Type;
+typedef std::function<Vector3(const Vector3 &,double)> DynamicVector3Type;
 
 // the HitRecord struct is used to pass the data calculated in shape's intersection method
 struct HitRecord{
@@ -17,4 +17,9 @@ struct HitRecord{
 	Vector2 UVcoord;	// 2-D UV coordinate on a texture
 	std::tr1::shared_ptr<Texture> texture;	// the hitten texture
 };
+
+#ifdef _WIN32
+#define fscanf fscanf_s
+#define fprintf fprintf_s
+#endif // _WIN32
 #endif // COMMON_H_

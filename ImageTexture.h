@@ -15,6 +15,7 @@ class ImageTexture:public Texture{
 public:
 	// constructors
 	ImageTexture(std::string filename);
+	ImageTexture(const ImageTexture &_orig);
 
 	void setImage(const Image &_image);
 	Image getImage()const;
