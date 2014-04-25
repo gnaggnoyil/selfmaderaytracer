@@ -31,6 +31,7 @@ private:
 	// render a single primitive ray using depth first search
 	void raytrace(const Ray &r,double time,int renderDepth);
 
+	// parser methods
 	void parseComment(FILE *f,std::string filename);
 	void parseViewpoint(FILE *f,std::string filename);
 	void parseLight(FILE *f,std::string filename);
