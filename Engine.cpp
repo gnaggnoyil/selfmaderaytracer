@@ -15,20 +15,16 @@
 #include "TrianglePatch.h"
 #include "Triangle.h"
 #include "ImageTexture.h"
+#include <string.h>
+#include "Matrix.h"
+#include <unordered_map>
+#include "Mesh.h"
+#include "MeshTriangle.h"
 
-#define EPSILON (1e-6)
-
-class ZeroAnimation:public DynamicVector3Type{
-public:
-	Vector3 operator()(const Vector3 &orig,double){
-		return Vector3(orig);
-	}
-};
-
-DynamicVector3Type operator*(DynamicVector3Type func1,DynamicVector3Type func2){
-	return [&func1,&func2](const Vector3 &orig,double time){
-		func2(func1(orig,time),time);
-	};
+Engine::Engine(int _maxRenderDepth=6)
+	:maxRenderDepth(_maxRenderDepth),currentMaterial(nullptr,rgb(0,0,0),0,0,0,0,0),background(0,0,0),ambient(1.0f,1.0f,1.0f),
+	currentDetailLevel(0){
+		animationStack.push(ZeroAnimation());
 }
 
 void Engine::parseComment(FILE *f,std::string filename){
@@ -62,7 +58,7 @@ void Engine::parseViewpoint(FILE *f,std::string filename){
 
 	Vector3 axis=lookat-orig;
 	double h=axis.length()*tan(angle/2.0f);
-	camera=Camera(orig,lookat,h*picwidth/picheight,h,hither,animationStack.top());
+	camera=std::make_shared<Camera>(Camera(orig,lookat,h*picwidth/picheight,h,hither,animationStack.top()*transforms["camera"]));
 	return;
 
 fmterr:
@@ -79,11 +75,19 @@ std::string ITOS(int x,int base){
 
 void Engine::parseLight(FILE *f,std::string filename){
 	std::string name;
+	DynamicVector3Type animation=animationStack.top();
 
 	char ch=getc(f);
 	if(ch=='a'){
-		for(;ch=getc(f)==' ';);
-		for(name.push_back(ch);ch=getc(f)!=' ';name.push_back(ch));
+		char s[100];
+		if(fscanf(f,"%s",s)!=1){
+			fprintf(stderr,"Light source name syntax error in file %s at byte %d\n",filename.c_str(),ftell(f));
+			exit(-1);
+		}
+		name=std::string(s);
+		auto it=transforms.find(name);
+		if(it!=transforms.end())
+			animation=animation*transforms[name];
 	}
 	else
 		name=ITOS(lights.size(),10);
@@ -106,7 +110,7 @@ void Engine::parseLight(FILE *f,std::string filename){
 	else
 		col=rgb(a,b,c);
 
-	lights.insert(std::make_pair(name,Light(col,pos,animationStack.top())));
+	lights.insert(std::make_pair(name,Light(col,pos,animation)));
 }
 
 void Engine::parseBackground(FILE *f,std::string filename){
@@ -218,7 +222,7 @@ fmterr:
 	exit(-1);
 }
 
-void Engine::parseInclude(FILE *f,std::string filename){
+void Engine::parseInclude(FILE *f,std::string filename,int pass){
 	int level;
 	if(fscanf(f,"%d",&level)!=1){
 		fprintf(stderr,"Error: could not parse include in file %s at byte %d",filename.c_str(),ftell(f));
@@ -226,13 +230,19 @@ void Engine::parseInclude(FILE *f,std::string filename){
 	}
 
 	std::string ifilename;
-	char ch;
-	for(;ch=getc(f)==' ';);
-	for(ifilename.push_back(ch);ch=getc(f)!=' ';ifilename.push_back(ch));
+	char ch[100];
+	if(fscanf(f,"%s",ch)!=1){
+		fprintf(stderr,"parse include file error in file %s at byte %d",filename.c_str(),ftell(f));
+		exit(-1);
+	}
+	ifilename=std::string(ch);
 	if(level<=currentDetailLevel){
 		FILE *ifile;
 		if(ifile=fopen(ifilename.c_str(),"r")){
-			parseFile(ifile,ifilename);
+			if(pass==1)
+				parseFilePass1(ifile,ifilename);
+			if(pass==2)
+				parseFilePass2(ifile,ifilename);
 			fclose(ifile);
 		}
 		else{
@@ -250,39 +260,6 @@ void Engine::parseDetailLevel(FILE *f,std::string filename){
 		exit(-1);
 	}
 }
-
-class TimeInterpolate:public DynamicVector3Type{
-public:
-	TimeInterpolate(const std::vector<Vector3> &_v,const std::vector<double> &_t):
-		v(_v),t(_t){}
-	Vector3 operator()(const Vector3 &_orig,double _time){
-		if(_time<t[0])
-			return Vector3(_orig);
-		if(_time>t[t.size()])
-			return v[v.size()];
-		int i=search(_time);
-		if(fabs(t[i]-_time)<EPSILON)
-			return v[i];
-		double c=(t[i]-_time)/(t[i]-t[i-1]);
-		return v[i-1]*c+v[i]*(1-c);
-	}
-private:
-	int search(double o){
-		int st=0,en=t.size()-1,mid=0;
-		for(;st<en;){
-			mid=(st+en)>>1;
-			if(fabs(t[mid]-o)<EPSILON)
-				return mid;
-			if(t[mid]>o)
-				en=mid;
-			else
-				st=mid+1;
-		}
-		return en;
-	}
-	std::vector<Vector3> v;
-	std::vector<double> t;
-};
 
 void Engine::parseAnimatedTriangle(FILE *f,std::string filename){
 	int num;
@@ -342,8 +319,11 @@ void Engine::parseTriangle(FILE *f,std::string filename){
 		char ch1=fgetc(f);
 		if(ch1=='p'){
 			std::string texturename;
-			for(;ch1=getc(f)==' ';);
-			for(texturename.push_back(ch1);ch1=getc(f)!=' ';texturename.push_back(ch1));
+			char s[100];
+			if(fscanf(f,"%s",s)!=1)
+				goto fmterr;
+			texturename=std::string(s);
+
 			FILE *tf;
 			if(tf=fopen(texturename.c_str(),"rb"))
 				fclose(tf);
@@ -380,8 +360,11 @@ void Engine::parseTriangle(FILE *f,std::string filename){
 		else{
 			ungetc(ch1,f);
 			std::string texturename;
-			for(;ch1=getc(f)==' ';);
-			for(texturename.push_back(ch1);ch1=getc(f)!=' ';texturename.push_back(ch1));
+			char s[100];
+			if(fscanf(f,"%s",s)!=1)
+				goto fmterr;
+			texturename=std::string(s);
+
 			FILE *tf;
 			if(tf=fopen(texturename.c_str(),"rb"))
 				fclose(tf);
@@ -420,8 +403,378 @@ fmterr:
 	exit(-1);
 }
 
-bool Engine::parseFile(FILE *f,std::string filename){
-	int ch;
+DynamicVector3Type Engine::parseKeyFramesTranslate(FILE *f,std::string filename,int num){
+	std::vector<double> time,tension,continuity,bias;
+	std::vector<Vector3> shift;
+	for(double x,y,z,a,b,c,t;num>0;--num){
+		if(fscanf(f,"%lf %lf %lf %lf %lf %lf %lf",&t,&x,&y,&z,&a,&b,&c)!=7)
+			goto fmterr;
+		time.push_back(t);
+		shift.push_back(Vector3(x,y,z));
+		tension.push_back(a);
+		continuity.push_back(b);
+		bias.push_back(c);
+	}
+
+	return [&time,&shift,&tension,&continuity,&bias](const Vector3 &_orig,double _time){
+		//these codes are fake, they are used to show the behaviour
+		if(_time<time[0])
+			return _orig+shift[0];
+		if(_time>time[time.size()])
+			return _orig+shift[shift.size()];
+		int i=search(time,_time);
+		if(fabs(time[i]-_time)<EPSILON)
+			return _orig+shift[i];
+		double c=(time[i]-_time)/(time[i]-time[i-1]);
+		return _orig+shift[i-1]*c+shift[i]*(1-c);
+	};
+fmterr:
+	fprintf(stderr,"parse key frame translation error in file %s at byte %d",filename.c_str(),ftell(f));
+	exit(-1);
+}
+
+DynamicVector3Type Engine::parseKeyFramesRotate(FILE *f,std::string filename,int num){
+	std::vector<double> time,tension,continuity,bias,angle;
+	std::vector<Vector3> axis;
+	for(double x,y,z,a,b,c,g,t;num>0;--num){
+		if(fscanf(f,"%lf %lf %lf %lf %lf %lf %lf %lf",&t,&x,&y,&z,&g,&a,&b,&c)!=8)
+			goto fmterr;
+
+		time.push_back(t);
+		axis.push_back(Vector3(x,y,z));
+		tension.push_back(a);
+		continuity.push_back(b);
+		bias.push_back(c);
+		angle.push_back(g*M_PI/180.0f);
+	}
+	
+	std::vector<Matrix> srotate;
+	srotate.push_back(rotate(axis[0],angle[0]));
+	for(int i=1;i<angle.size();i++)
+		srotate.push_back(*(srotate.end())*rotate(axis[i],angle[i]));
+
+	return [&time,&axis,&angle,&srotate,&tension,&continuity,&bias](const Vector3 &_orig,double _time){
+		//these codes are fake, they are used to show the behaviour
+		if(_time<time[0])
+			return srotate[0]*_orig;
+		if(_time>time[time.size()])
+			return srotate[srotate.size()]*_orig;
+		int i=search(time,_time);
+		if(fabs(time[i]-_time)<EPSILON)
+			return srotate[i]*_orig;
+		double c=(time[i]-_time)/(time[i]-time[i-1]);
+		double a=angle[i-1]*(1-c);
+		return srotate[i-1]*rotate(axis[i-1],a)*_orig;
+	};
+fmterr:
+	fprintf(stderr,"parse key frame rotation error in file %s at byte %d",filename.c_str(),ftell(f));
+	exit(-1);
+}
+
+DynamicVector3Type Engine::parseKeyFramesScale(FILE *f,std::string filename,int num){
+	std::vector<double> time,tension,continuity,bias;
+	std::vector<Vector3> scale;
+	for(double t,a,b,c,x,y,z;num>0;--num){
+		if(fscanf(f,"%lf %lf %lf %lf %lf %lf %lf",&t,&x,&y,&z,&a,&b,&c)!=7)
+			goto fmterr;
+
+		time.push_back(t);
+		scale.push_back(Vector3(x,y,z));
+		tension.push_back(a);
+		continuity.push_back(b);
+		bias.push_back(c);
+	}
+
+	return [&time,&scale,&tension,&continuity,&bias](const Vector3 &_orig,double _time){
+		//these codes are fake, they are used to show the behaviour
+		if(_time<time[0])
+			return Vector3(_orig[0]*scale[0][0],_orig[1]*scale[0][1],_orig[2]*scale[0][2]);
+		if(_time>time[time.size()])
+			return Vector3(_orig[0]*scale[scale.size()][0],_orig[1]*scale[scale.size()][1],_orig[2]*scale[scale.size()][2]);
+		int i=search(time,_time);
+		if(fabs(time[i]-_time)<EPSILON)
+			return Vector3(_orig[0]*scale[i][0],_orig[1]*scale[i][1],_orig[2]*scale[i][2]);
+		double c=(time[i]-_time)/(time[i]-time[i-1]);
+		Vector3 scaleV=scale[i-1]*c+scale[i]*(1-c);
+		return Vector3(_orig[0]*scaleV[0],_orig[1]*scaleV[1],_orig[2]*scaleV[2]);
+	};
+fmterr:
+	fprintf(stderr,"parse key frame scaling error in file %s at byte %d",filename.c_str(),ftell(f));
+	exit(-1);
+}
+
+void Engine::parseKeyFrames(FILE *f,std::string filename){
+	char s[100];
+	if(fscanf(f,"%s",s)!=1)
+		goto fmterr;
+	std::string transformname(s);
+
+	char ch;
+	for(ch=getc(f);(ch==' ')||(ch=='\t')||(ch=='\n')||(ch=='\r')||(ch=='\f');ch=getc(f));
+	
+	if(ch!='{')
+		goto fmterr;
+	for(ch=getc(f);(ch==' ')||(ch=='\t')||(ch=='\n')||(ch=='\r')||(ch=='\f');ch=getc(f));
+	DynamicVector3Type transl,rot,scale;
+	for(;ch!='}';ch=getc(f)){
+		ungetc(ch,f);
+		char type[100];
+		int num;
+		bool success=false;
+		if(fscanf(f,"%s %d",type,&num)!=2)
+			goto fmterr;
+
+		if((strcmp(type,"visibility")!=0)&&(num<4))
+			goto fmterr;
+
+		if(strcmp(type,"transl")==0){
+			transl=parseKeyFramesTranslate(f,filename,num);
+			success=true;
+		}
+		if(strcmp(type,"rot")==0){
+			rot=parseKeyFramesRotate(f,filename,num);
+			success=true;
+		}
+		if(strcmp(type,"scale")==0){
+			scale=parseKeyFramesScale(f,filename,num);
+			success=true;
+		}
+		if(strcmp(type,"visibility")==0){
+			// to be done
+			success=true;
+		}
+		if(!success)
+			goto fmterr;
+		for(ch=getc(f);(ch==' ')||(ch=='\t')||(ch=='\n')||(ch=='\r')||(ch=='\f');ch=getc(f));
+		ungetc(ch,f);
+	}
+
+	transforms.insert(std::make_pair(transformname,scale*rot*transl));
+	/*if(transformname.compare("camera")==0)
+		camera.setAnimation(camera.getAnimation()*scale*rot*transl);
+	
+	auto it=lights.find(transformname);
+	if(it!=lights.end())
+		lights[transformname].setAnimation(lights[transformname].getAnimation()*scale*rot*transl);*/
+
+	return;
+fmterr:
+	fprintf(stderr,"parse key frames error in file %s at byte %d",filename.c_str(),ftell(f));
+	exit(-1);
+}
+
+void Engine::parseXform(FILE *f,std::string filename){
+	char is_static=fgetc(f);
+	if(is_static=='s'){
+		double sx,sy,sz,rx,ry,rz,deg,tx,ty,tz;
+		if(fscanf(stderr,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",&sx,&sy,&sz,&rx,&ry,&rz,&deg,&tx,&ty,&tz)!=10){
+			fprintf(stderr,"Error: could not read static transform in file %s at byte %d",filename.c_str(),ftell(f));
+			exit(-1);
+		}
+
+		char ch;
+		for(ch=getc(f);(ch==' ')||(ch=='\t')||(ch=='\n')||(ch=='\r')||(ch=='\f');ch=getc(f));
+		if(ch!='{'){
+			fprintf(stderr,"Error: { expected in file %s at byte %d",filename.c_str(),ftell(f));
+			exit(-1);
+		}
+
+		Matrix m=translate(tx,ty,tz)*rotate(Vector3(rx,ry,rz),deg)*scale(sx,sy,sz);
+		animationStack.push([&m](const Vector3 &_orig,double){
+			return m*_orig;
+		}*animationStack.top());
+	}
+	else{
+		ungetc(is_static,f);
+		char s[100];
+		if(fscanf(f,"%s",s)!=1){
+			fprintf(stderr,"Error: could not read transform name in file %s at byte %d",filename.c_str(),ftell(f));
+			exit(-1);
+		}
+
+		std::string name(s);
+		auto it=transforms.find(name);
+		if(it==transforms.end()){
+			fprintf(stderr,"No transform name %s find in file %s at byte %d",name.c_str(),filename.c_str(),ftell(f));
+			exit(-1);
+		}
+
+		char ch;
+		for(ch=getc(f);(ch==' ')||(ch=='\t')||(ch=='\n')||(ch=='\r')||(ch=='\f');ch=getc(f));
+		if(ch!='{'){
+			fprintf(stderr,"Error: { expected in file %s at byte %d",filename.c_str(),ftell(f));
+			exit(-1);
+		}
+
+		animationStack.push(transforms[name]*animationStack.top());
+	}
+}
+
+void Engine::parseAmbient(FILE *f,std::string filename){
+	double a,b,c;
+	if(fscanf(f,"%lf %lf %lf",&a,&b,&c)==3)
+		ambient=rgb(a,b,c);
+	else{
+		fprintf(stderr,"Error: could not parse ambient light (am) in file %s at byte %d",filename.c_str(),ftell(f));
+		exit(-1);
+	}
+}
+
+void Engine::parseA(FILE *f,std::string filename){
+	char is_ambient=getc(f);
+	if(is_ambient=='m')
+		parseAmbient(f,filename);
+	else{
+		ungetc(is_ambient,f);
+		if(fscanf(f,"%lf %lf %d",&starttime,&endtime,&numframes)!=3){
+			fprintf(stderr,"Error: could not parse animations parameters in file %s at byte %d",filename.c_str(),ftell(f));
+			exit(-1);
+		}
+	}
+}
+
+void Engine::parseMesh(FILE *f,std::string filename){
+	char str[100];
+	double a,b,c;
+	std::vector<Vector3> vert,norm;
+	std::vector<Vector2> tex;
+	Material material(currentMaterial);
+	if(fscanf(f,"%s",str)!=1){
+		fprintf(stderr,"Error: could not parse mesh (could not find 'vertices') in file %s at byte %d",filename.c_str(),ftell(f));
+		exit(-1);
+	}
+	if(strcmp(str,"vertices")!=0){
+		fprintf(stderr,"Error: could not parse mesh (expected 'vertices') in file %s at byte %d",filename.c_str(),ftell(f));
+		exit(-1);
+	}
+	int numVerts;
+	if(fscanf(f,"%d",&numVerts)!=1){
+		fprintf(stderr,"Error: could not parse mesh (expected 'num_vertices') in file %s at byte %d",filename.c_str(),ftell(f));
+		exit(-1);
+	}
+	for(;numVerts>0;--numVerts){
+		if(fscanf(f,"%lf %lf %lf",&a,&b,&c)!=3){
+			fprintf(stderr,"Error: could not read vertices of mesh in file %s at byte %d",filename.c_str(),ftell(f));
+			exit(-1);
+		}
+		vert.push_back(Vector3(a,b,c));
+	}
+
+	bool hasNorm=false,hasTex=false;
+	fscanf(f,"%s",str);
+	if(strcmp(str,"normals")==0){
+		hasNorm=true;
+		int numNorms;
+		if(fscanf(f,"%d",&numNorms)!=1){
+			fprintf(stderr,"Error: could not parse mesh (expected 'num_vertices') in file %s at byte %d",filename.c_str(),ftell(f));
+			exit(-1);
+		}
+		for(;numNorms>0;--numNorms){
+			if(fscanf(f,"%lf %lf %lf",&a,&b,&c)!=3){
+				fprintf(stderr,"Error: could not read normals of mesh in file %s at byte %d",filename.c_str(),ftell(f));
+				exit(-1);
+			}
+			norm.push_back(Vector3(a,b,c));
+		}
+		fscanf(f,"%s",str);
+	}
+
+	if(strcmp(str,"texturecoords")==0){
+		hasTex=true;
+		int numTex;
+		if(fscanf(f,"%d",&numTex)!=1){
+			fprintf(stderr,"Error: could not parse mesh (expected 'num_txts') in file %s at byte %d",filename.c_str(),ftell(f));
+			exit(-1);
+		}
+		char s[100];
+		if(fscanf(f,"%s",s)!=1){
+			fprintf(stderr,"Error: could not parse mesh (expected 'texturename') in file %s at byte %d",filename.c_str(),ftell(f));
+			exit(-1);
+		}
+		FILE *ifile;
+		if(ifile=fopen(s,"r"))
+			fclose(ifile);
+		else{
+			fprintf(stderr,"Error: could not open texture file %s in file %s at byte %d",s,filename.c_str(),ftell(f));
+			exit(-1);
+		}
+		material.setTex(std::shared_ptr<ImageTexture>(new ImageTexture(std::string(s))));
+
+		for(;numTex>0;--numTex){
+			if(fscanf(f,"%lf %lf",&a,&b)!=2){
+				fprintf(stderr,"Error: could not read texturecoord indices of mesh in file %s at byte %d",filename.c_str(),ftell(f));
+				exit(-1);
+			}
+			tex.push_back(Vector2(a,b));
+		}
+		fscanf(f,"%s",str);
+	}
+
+	std::tr1::shared_ptr<Mesh> mesh;
+	if((!hasNorm)&&(!hasTex))
+		mesh=std::make_shared<Mesh>(Mesh(vert,material));
+	if((hasNorm)&&(!hasTex))
+		mesh=std::make_shared<Mesh>(Mesh(vert,norm,material));
+	if((!hasNorm)&&(hasTex))
+		mesh=std::make_shared<Mesh>(Mesh(vert,tex,material));
+	if((hasNorm)&&(hasTex))
+		mesh=std::make_shared<Mesh>(Mesh(vert,norm,tex,material));
+
+	if(strcmp(str,"triangles")==0){
+		int numTri;
+		if(fscanf(f,"%d",&numTri)!=1){
+			fprintf(stderr,"Error: could not parse mesh (expected 'num_triangles') in file %s at byte %d",filename.c_str(),ftell(f));
+			exit(-1);
+		}
+		for(int p0,p1,p2,n0,n1,n2,t0,t1,t2;numTri>0;--numTri){
+			p0=-1,p1=-1,p2=-1,n0=-1,n1=-1,n2=-1,t0=-1,t1=-1,t2=-1;
+			if(fscanf(f,"%d %d %d",&p0,&p1,&p2)!=3){
+				fprintf(stderr,"Error: could not read vertex indices of meshin file %s at byte %d",filename.c_str(),ftell(f));
+				exit(-1);
+			}
+
+			if(hasNorm){
+				if(fscanf(f,"%d %d %d",&n0,&n1,&n2)!=3){
+					fprintf(stderr,"Error: could not read set of normal indices of meshin file %s at byte %d",filename.c_str(),ftell(f));
+					exit(-1);
+				}
+			}
+
+			if(hasTex){
+				if(fscanf(f,"%d %d %d",&t0,&t1,&t2)!=3){
+					fprintf(stderr,"Error: could not read texturecoord indices of meshin file %s at byte %d",filename.c_str(),ftell(f));
+					exit(-1);
+				}
+			}
+
+			scene.push_back(std::make_shared<MeshTriangle>(MeshTriangle(p0,p1,p2,n0,n1,n2,t0,t1,t2,mesh,animationStack.top())));
+		}
+	}
+	else{
+		fprintf(stderr,"Error: expected 'triangles' in mesh in file %s at byte %d",filename.c_str(),ftell(f));
+		exit(-1);
+	}
+}
+
+bool Engine::parseFilePass1(FILE *f,std::string filename){
+	char ch;
+	for(;ch=getc(f)!=EOF;){
+		switch(ch){
+		case 'i':
+		parseInclude(f,filename,1);
+		break;
+		case 'k':	// key frames for transform (or the camera)
+		parseKeyFrames(f,filename);
+		break;
+		default:
+		continue;
+		}
+	}
+	return true;
+}
+
+bool Engine::parseFilePass2(FILE *f,std::string filename){
+	char ch,ch1;
 	for(;ch=getc(f)!=EOF;){
 		switch(ch){
 		case ' ':	// white space
@@ -456,7 +809,7 @@ bool Engine::parseFile(FILE *f,std::string filename){
 		parsePoly(f,filename);
 		break;
 		case 'i':	// include another file
-		parseInclude(f,filename);
+		parseInclude(f,filename,2);
 		break;
 		case 'd':	// detail level of file (used to exclude objects from rendering)
 		parseDetailLevel(f,filename);
@@ -464,11 +817,34 @@ bool Engine::parseFile(FILE *f,std::string filename){
 		case 't':	// textured triangle, or texture tripatch, or animated triangle
 		parseTriangle(f,filename);
 		break;
+		case 'k':
+		for(ch1=getc(f);ch1!='}';ch1=getc(f));
+		break;
+		case 'x':	// transform
+		parseXform(f,filename);
+		break;
+		case '}':
+		animationStack.pop();
+		break;
+		case 'a':	// animation parameters
+		parseA(f,filename);
+		break;
+		case 'm':	// triangle mesh
+		parseMesh(f,filename);
+		break;
+		default:
+		fprintf(stderr,"unknown NFF primitive code: %c in file %s at byte %d",ch,filename.c_str(),ftell(f));
+		exit(-1);
 		}
 	}
+	return true;
 }
 
 bool Engine::parseAFF(std::string filename){
 	FILE *in=fopen(filename.c_str(),"r");
-
+	parseFilePass1(in,filename);
+	fclose(in);
+	in=fopen(filename.c_str(),"r");
+	parseFilePass2(in,filename);
+	fclose(in);
 }

@@ -53,6 +53,7 @@ public:
 	friend Matrix translate(double _x,double _y,double _z);
 	// generate a matrix that performs scaling for a certian scaling factor
 	friend Matrix scale(double scaleX,double scaleY,double scaleZ);
+	friend Matrix scale(const Vector3 &scaleV);
 	// generate a matrix that performs rotation for certain angle(in radius) base on a certain axis
 	friend Matrix rotate(const Vector3 &axis,double angle);
 	friend Matrix rotateX(double angle);	// rotate by X-axis

@@ -13,7 +13,10 @@
 class Mesh{
 public:
 	// constructors
-	Mesh(const std::vector<Vector3> &_vertex,const std::vector<Vector3> &_normal,const std::vector<Vector2> &texCoord,const Material &_material);
+	Mesh(const std::vector<Vector3> &_vertex,const Material &_material);
+	Mesh(const std::vector<Vector3> &_vertex,const std::vector<Vector3> &_normal,const Material &_material);
+	Mesh(const std::vector<Vector3> &_vertex,const std::vector<Vector2> &_texCoord,const Material &_material);
+	Mesh(const std::vector<Vector3> &_vertex,const std::vector<Vector3> &_normal,const std::vector<Vector2> &_texCoord,const Material &_material);
 	Mesh(const Mesh &_orig);
 
 	void setVertex(int i,const Vector3 &_vertex);
