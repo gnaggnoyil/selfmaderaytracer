@@ -20,6 +20,8 @@ public:
 	Vector3 getP()const;
 	void setAnimation(const DynamicVector3Type &_animation);
 	DynamicVector3Type getAnimation()const;
+
+	Vector3 getCenter(double time);
 private:
 	rgb color;
 	Vector3 p;

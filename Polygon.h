@@ -28,7 +28,7 @@ public:
 	int getVertexNumber();
 
 	// implements the hit method of the Shape class
-	bool hit(const Ray &r,double tmin,double tmax,double time,HitRecord &record)const;
+	bool hit(const Ray &r,double tmax,double time,HitRecord &record)const;
 private:
 	std::vector<Vector3> vertex;
 	Material material;

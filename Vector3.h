@@ -7,6 +7,7 @@
 class Vector3{
 public:
 	// constructors
+	Vector3();
 	Vector3(double _x,double _y,double _z);
 	Vector3(const Vector3 &_orig);
 

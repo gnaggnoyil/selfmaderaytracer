@@ -7,6 +7,7 @@
 class Vector2{
 public:
 	//constructors
+	Vector2();
 	Vector2(double _x,double _y);
 	Vector2(const Vector2 &orig);
 

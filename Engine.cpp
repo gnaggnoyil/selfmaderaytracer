@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include "Mesh.h"
 #include "MeshTriangle.h"
+#include "Image.h"
 
 Engine::Engine(int _maxRenderDepth=6)
 	:maxRenderDepth(_maxRenderDepth),currentMaterial(nullptr,rgb(0,0,0),0,0,0,0,0),background(0,0,0),ambient(1.0f,1.0f,1.0f),
@@ -423,7 +424,7 @@ DynamicVector3Type Engine::parseKeyFramesTranslate(FILE *f,std::string filename,
 		if(_time>time[time.size()])
 			return _orig+shift[shift.size()];
 		int i=search(time,_time);
-		if(fabs(time[i]-_time)<EPSILON)
+		if(fabs(time[i]-_time)<DBL_EPSILON)
 			return _orig+shift[i];
 		double c=(time[i]-_time)/(time[i]-time[i-1]);
 		return _orig+shift[i-1]*c+shift[i]*(1-c);
@@ -460,7 +461,7 @@ DynamicVector3Type Engine::parseKeyFramesRotate(FILE *f,std::string filename,int
 		if(_time>time[time.size()])
 			return srotate[srotate.size()]*_orig;
 		int i=search(time,_time);
-		if(fabs(time[i]-_time)<EPSILON)
+		if(fabs(time[i]-_time)<DBL_EPSILON)
 			return srotate[i]*_orig;
 		double c=(time[i]-_time)/(time[i]-time[i-1]);
 		double a=angle[i-1]*(1-c);
@@ -492,7 +493,7 @@ DynamicVector3Type Engine::parseKeyFramesScale(FILE *f,std::string filename,int 
 		if(_time>time[time.size()])
 			return Vector3(_orig[0]*scale[scale.size()][0],_orig[1]*scale[scale.size()][1],_orig[2]*scale[scale.size()][2]);
 		int i=search(time,_time);
-		if(fabs(time[i]-_time)<EPSILON)
+		if(fabs(time[i]-_time)<DBL_EPSILON)
 			return Vector3(_orig[0]*scale[i][0],_orig[1]*scale[i][1],_orig[2]*scale[i][2]);
 		double c=(time[i]-_time)/(time[i]-time[i-1]);
 		Vector3 scaleV=scale[i-1]*c+scale[i]*(1-c);
@@ -847,4 +848,106 @@ bool Engine::parseAFF(std::string filename){
 	in=fopen(filename.c_str(),"r");
 	parseFilePass2(in,filename);
 	fclose(in);
+}
+
+void Engine::raytrace(const Ray &r,double time,rgb &result,double rIndex,double &dist,int renderDepth){
+	dist=1e15;
+	HitRecord record;
+	bool find=false;
+	for(auto it=scene.begin();it!=scene.end();++it)
+		if((*it)->hit(r,dist,time,record)){
+			dist=record.t;
+			find=true;
+		}
+	if(!find){
+		result=background;
+		return;
+	}
+
+	rgb result(0,0,0);
+	rgb materialcolor=record.material->calcColor(record.UVcoord,record.hitpoint);
+
+	Vector3 hit_pi=r.getOrigin()+record.t*r.getDirection();
+	for(auto it=lights.begin();it!=lights.end();++it){
+		Light light=it->second;
+		Vector3 L=light.getCenter(time)-hit_pi;
+
+		double tdist=L.length();
+		L=normalize(L);
+
+		HitRecord trec;
+		double shade=1.0f;
+		for(auto it1=scene.begin();it1!=scene.end();++it1)
+			if((*it1)->hit(Ray(hit_pi+LDBL_EPSILON*L,L),tdist,time,trec))
+				shade=0.0f;
+
+		if(shade>0.0f){
+			// calculate diffuse shading
+			L=light.getCenter(time)-hit_pi;
+			L=normalize(L);
+			Vector3 N=record.normal;
+			double DOT=dot(L,N);
+			if(DOT>0.0f){
+				rgb diff=DOT*record.material->getDiff()*shade;
+				result+=diff*materialcolor*light.getColor();
+			}
+			
+			// determine specular component
+			Vector3 V=r.getDirection();
+			Vector3 R=L-2.0f*dot(L,N)*N;
+			DOT=dot(V,R);
+			if(DOT>0.0f){
+				rgb spec=pow(DOT,record.material->getShine())*record.material->getSpec()*shade;
+				result+=spec*light.getColor();
+			}
+		}
+	}// for(auto it=lights.begin();it!=lights.end();++it)
+
+	// calculate reflection
+	rgb refl=record.material->getSpec();
+	if(((refl.getR()>0.0f)||(refl.getG()>0.0f)||(refl.getB()>0.0f))&&(renderDepth<maxRenderDepth)){
+		Vector3 N=record.normal;
+		Vector3 L=r.getDirection();
+		Vector3 R=L-2.0f*dot(L,N)*N;
+		double tdist;
+		rgb temp;
+		raytrace(Ray(hit_pi+DBL_EPSILON*R,R),time,temp,rIndex,tdist,renderDepth+1);
+		result+=refl*temp*materialcolor;
+	}
+
+	// calculate refraction
+	double refr=record.material->getTransmit();
+	if((refr>0.0f)&&(renderDepth>maxRenderDepth)){
+		double rIndex2=record.material->getRefractionIndex();
+		double n=rIndex/rIndex2;
+		Vector3 N=record.normal;
+		Vector3 L=r.getDirection();
+		double cosI=-dot(N,L);
+		double cosT2=1.0f-n*n*(1.0f-cosI*cosI);
+		if(cosT2>0.0f){
+			Vector3 T=n*L+(n*cosI-sqrt(cosT2))*N;
+			double tdist;
+			rgb temp;
+			raytrace(Ray(hit_pi+DBL_EPSILON*T,T),time,temp,rIndex2,tdist,renderDepth+1);
+			rgb absorbance=materialcolor*0.15f*(-tdist);
+			rgb transparency=rgb(exp(absorbance.getR()),exp(absorbance.getG()),exp(absorbance.getB()));
+			result+=temp*transparency;
+		}
+	}
+}
+
+Image Engine::render(int frameIndex){
+	double time=starttime+(double)frameIndex*(endtime-starttime)/(double)(numframes-1);
+
+	Image result(picwidth,picheight);
+	for(int y=0;y<picheight;++y)
+		for(int x=0;x<picheight;++x){
+			rgb color;
+			double u=(double)x/(double)picwidth;
+			double v=(double)y/(double)picheight;
+			Ray r=camera->getRay(u,v,time);
+			double dist;
+			raytrace(r,time,color,1.0f,dist,1);
+			result.setRGB(x,y,color);
+		}
 }

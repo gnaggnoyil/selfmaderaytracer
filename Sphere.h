@@ -4,8 +4,8 @@
 #include "Shape.h"
 #include "Ray.h"
 #include "Material.h"
-#include <memory>
 #include "Vector3.h"
+#include "Common.h"
 
 /**
  * this is the sphere class inherited form the abstract shape class
@@ -13,7 +13,7 @@
 class Sphere:public Shape{
 public:
 	// constructors
-	Sphere(const Vector3 &_ocenter,double _radius,const Material &_material,DynamicVector3Type _animation);
+	Sphere(const Vector3 &_ocenter,double _radius,const Material &_material,const DynamicVector3Type &_animation);
 	Sphere(const Sphere &_orig);
 
 	void setOCenter(const Vector3 &_ocenter);
@@ -26,7 +26,7 @@ public:
 	DynamicVector3Type getAnimation()const;
 
 	// implements the hit method of the Shape class
-	bool hit(const Ray &r,double tmin,double tmax,double time,HitRecord &record)const;
+	bool hit(const Ray &r,double tmax,double time,HitRecord &record)const;
 private:
 	Material material;
 	Vector3 ocenter;

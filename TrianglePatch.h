@@ -34,7 +34,7 @@ public:
 	DynamicVector3Type getAnimation(int i)const;
 
 	// implements the hit method of the Shape class
-	bool hit(const Ray &r,double tmin,double tmax,double time,HitRecord &record)const;
+	bool hit(const Ray &r,double tmax,double time,HitRecord &record)const;
 private:
 	Vector3 vertex[3];
 	Vector3 normal[3];

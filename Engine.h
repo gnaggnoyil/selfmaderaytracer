@@ -29,7 +29,7 @@ public:
 	Image render(int frameindex);
 private:
 	// render a single primitive ray using depth first search
-	void raytrace(const Ray &r,double time,int renderDepth);
+	void raytrace(const Ray &r,double time,rgb &result,double rIndex,double &dist,int renderDepth);
 
 	// parser methods
 	void parseComment(FILE *f,std::string filename);

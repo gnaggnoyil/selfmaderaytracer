@@ -4,16 +4,16 @@
 #include <functional>
 #include "Vector3.h"
 #include "Texture.h"
+#include <vector>
 #include <memory>
 
-#define EPSILON (1e-6)
 #define M_PI (3.1415926535897932384626)
 
 int search(const std::vector<double> &t,double o){
 	int st=0,en=t.size()-1,mid=0;
 	for(;st<en;){
 		mid=(st+en)>>1;
-		if(fabs(t[mid]-o)<EPSILON)
+		if(fabs(t[mid]-o)<DBL_EPSILON)
 			return mid;
 		if(t[mid]>o)
 			en=mid;
@@ -32,7 +32,6 @@ DynamicVector3Type operator*(DynamicVector3Type func1,DynamicVector3Type func2){
 	};
 }
 
-
 class ZeroAnimation:public DynamicVector3Type{
 public:
 	Vector3 operator()(const Vector3 &orig,double){
@@ -50,7 +49,7 @@ public:
 		if(_time>t[t.size()])
 			return v[v.size()];
 		int i=search(t,_time);
-		if(fabs(t[i]-_time)<EPSILON)
+		if(fabs(t[i]-_time)<DBL_EPSILON)
 			return v[i];
 		double c=(t[i]-_time)/(t[i]-t[i-1]);
 		return v[i-1]*c+v[i]*(1-c);
@@ -66,7 +65,7 @@ struct HitRecord{
 	Vector3 hitpoint;	// hitpoint=orig+t*direction
 	Vector3 normal;		// the normal at the hitpoint
 	Vector2 UVcoord;	// 2-D UV coordinate on a texture
-	std::tr1::shared_ptr<Texture> texture;	// the hitten texture
+	std::tr1::shared_ptr<Material> material;	// the hitten material
 };
 
 #ifdef _WIN32

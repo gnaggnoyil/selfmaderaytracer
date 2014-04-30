@@ -25,6 +25,10 @@ public:
 	void setSpec(double _spec);
 	void setSpec(int i,double _spec);
 	rgb getSpec()const;
+	void setDiff(const rgb &_diff);
+	void setDiff(double _diff);
+	void setDiff(int i,double _diff);
+	rgb getDiff()const;
 	double getSpec(int i)const;
 	void setShine(double _shine);
 	double getShine()const;
@@ -34,7 +38,7 @@ public:
 	double getRefractionIndex()const;
 
 	// returns the color intersected by a ray
-	rgb calcColor(const Vector3 &uv,const Vector3 &p);
+	rgb calcColor(const Vector2 &uv,const Vector3 &p);
 private:
 	std::tr1::shared_ptr<Texture> tex;
 	rgb color;

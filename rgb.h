@@ -26,8 +26,10 @@ public:
 	friend rgb operator-(const rgb &c1,const rgb &c2);
 	friend rgb operator*(const rgb &c1,double scale);
 	friend rgb operator*(double scale,const rgb &c1);
+	friend rgb operator*(const rgb &c1,const rgb &c2);
 	friend rgb operator/(const rgb &c1,double scale);
 	friend rgb operator/(double scale,const rgb &c1);
+	friend rgb operator/(const rgb &c1,const rgb &c2);
 
 	const rgb &operator+()const;
 	rgb operator-()const;
