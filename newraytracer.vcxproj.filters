@@ -28,5 +28,12 @@
   <ItemGroup>
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="Sphere.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="ConstantColorTexture.cpp" />
+    <ClCompile Include="rgb.cpp" />
+    <ClCompile Include="ImageTexture.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Vector3.cpp" />
   </ItemGroup>
 </Project>

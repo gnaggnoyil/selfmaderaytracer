@@ -7,6 +7,7 @@
 #include "Image.h"
 #include <string>
 #include "rgb.h"
+#include <memory>
 
 /**
  * this class defines a image texture inherited from abstract Texture class
@@ -17,12 +18,12 @@ public:
 	ImageTexture(std::string filename);
 	ImageTexture(const ImageTexture &_orig);
 
-	void setImage(const Image &_image);
-	Image getImage()const;
+	void setImage(const std::tr1::shared_ptr<Image> &_image);
+	std::tr1::shared_ptr<Image> getImage()const;
 
 	// implement the value() method from the abstract Texture class
 	rgb value(const Vector2 &uv,const Vector3 &);
 private:
-	Image image;
+	std::tr1::shared_ptr<Image> image;
 };
 #endif // _IMAGE_TEXTURE_H_

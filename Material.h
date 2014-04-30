@@ -13,23 +13,24 @@
 class Material{
 public:
 	// constructors
-	Material(std::tr1::shared_ptr<Texture> _tex,const rgb &_color,double _diff,double _spec,double _shine,double _transmit,double _refractionIndex);
-	Material(std::tr1::shared_ptr<Texture> _tex,const rgb &_color,const rgb &_diff,const rgb &_spec,double _shine,double _transmit,double _refractionIndex);
-	Material(const Material &_material);
+	Material(const std::tr1::shared_ptr<Texture> &_tex,const rgb &_color,double _diff,double _spec,double _shine,double _transmit,double _refractionIndex);
+	Material(const std::tr1::shared_ptr<Texture> &_tex,const rgb &_color,const rgb &_diff,const rgb &_spec,double _shine,double _transmit,double _refractionIndex);
+	Material(const Material &_orig);
 
-	void setTex(std::tr1::shared_ptr<Texture> _tex);
-	std::tr1::shared_ptr<Texture> getTex();
+	void setTex(const std::tr1::shared_ptr<Texture> &_tex);
+	std::tr1::shared_ptr<Texture> getTex()const;
 	void setColor(const rgb &_color);
 	rgb getColor()const;
 	void setSpec(const rgb &_spec);
 	void setSpec(double _spec);
 	void setSpec(int i,double _spec);
 	rgb getSpec()const;
+	double getSpec(int i)const;
 	void setDiff(const rgb &_diff);
 	void setDiff(double _diff);
 	void setDiff(int i,double _diff);
 	rgb getDiff()const;
-	double getSpec(int i)const;
+	double getDiff(int i)const;
 	void setShine(double _shine);
 	double getShine()const;
 	void setTransmit(double _transmit);

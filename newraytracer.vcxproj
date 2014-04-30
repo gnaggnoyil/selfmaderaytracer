@@ -89,8 +89,15 @@
     <ClInclude Include="Vector3.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ConstantColorTexture.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Image.cpp" />
+    <ClCompile Include="ImageTexture.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="rgb.cpp" />
+    <ClCompile Include="Sphere.cpp" />
+    <ClCompile Include="Vector3.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

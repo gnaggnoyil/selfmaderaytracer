@@ -46,6 +46,6 @@ public:
 	// return the normalized vector of a given vector
 	friend Vector3 normalize(const Vector3 &v);
 private:
-	double e[3];
+	double x,y,z;
 };
 #endif // _VECTOR3_H_

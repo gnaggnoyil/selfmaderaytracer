@@ -36,7 +36,9 @@ public:
 	rgb &operator+=(const rgb &c);
 	rgb &operator-=(const rgb &c);
 	rgb &operator*=(double scale);
+	rgb &operator*=(const rgb &c);
 	rgb &operator/=(double scale);
+	rgb &operator/=(const rgb &c);
 private:
 	double r,g,b;
 };
