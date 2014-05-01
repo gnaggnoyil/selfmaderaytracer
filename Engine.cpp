@@ -26,7 +26,7 @@
 Engine::Engine(int _maxRenderDepth=6)
 	:maxRenderDepth(_maxRenderDepth),currentMaterial(nullptr,rgb(0,0,0),0,0,0,0,0),background(0,0,0),ambient(1.0f,1.0f,1.0f),
 	currentDetailLevel(0){
-		animationStack.push(ZeroAnimation());
+	animationStack.push(ZeroAnimation());
 }
 
 void Engine::parseComment(FILE *f,std::string filename){
@@ -470,6 +470,9 @@ fmterr:
 }
 
 DynamicVector3Type Engine::parseKeyFramesRotate(FILE *f,std::string filename,int num){
+	if(num<4)
+		goto fmterr;
+
 	std::vector<double> time,tension,continuity,bias,angle;
 	std::vector<Vector3> axis;
 	for(double x,y,z,a,b,c,g,t;num>0;--num){
@@ -543,6 +546,9 @@ fmterr:
 }
 
 DynamicVector3Type Engine::parseKeyFramesScale(FILE *f,std::string filename,int num){
+	if(num<4)
+		goto fmterr;
+
 	std::vector<double> time,tension,continuity,bias;
 	std::vector<Vector3> scale;
 	for(double t,a,b,c,x,y,z;num>0;--num){
@@ -967,7 +973,7 @@ void Engine::raytrace(const Ray &r,double time,rgb &result,double rIndex,double 
 	rgb result(0,0,0);
 	rgb materialcolor=record.material->calcColor(record.UVcoord,record.hitpoint);
 
-	Vector3 hit_pi=r.getOrigin()+record.t*r.getDirection();
+	Vector3 hit_pi=r.pointAt(record.t);
 	for(auto it=lights.begin();it!=lights.end();++it){
 		Light light=it->second;
 		Vector3 L=light.getCenter(time)-hit_pi;
@@ -1050,4 +1056,6 @@ Image Engine::render(int frameIndex){
 			raytrace(r,time,color,1.0f,dist,1);
 			result.setRGB(x,y,color);
 		}
+
+	return result;
 }

@@ -62,7 +62,7 @@ bool Sphere::hit(const Ray &r,double tmax,double time,HitRecord &record)const{
 		if((t<0.0f)||(t>tmax))
 			return false;
 
-		record.hitpoint=r.getOrigin()+t*r.getDirection();
+		record.hitpoint=r.pointAt(t);
 		if(inhit)
 			record.normal=center-record.hitpoint;
 		else

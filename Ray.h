@@ -11,7 +11,7 @@ public:
 	// constructors
 	Ray(const Vector3 &_orig,const Vector3 &_direction);
 	Ray(const Ray &_orig);
-
+	
 	void setOrigin(const Vector3 &_orig);
 	Vector3 getOrigin()const;
 	void setDirection(const Vector3 &_direction);

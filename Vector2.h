@@ -26,15 +26,15 @@ public:
 	friend Vector2 operator/(const Vector2 &v1,double scale);
 	friend Vector2 operator/(double scale,const Vector2 &v1);
 	friend double dot(const Vector2 &v1,const Vector2 &v2);
-	friend double corss(const Vector2 &v1,const Vector2 &v2);
+	friend double cross(const Vector2 &v1,const Vector2 &v2);
 	friend bool operator==(const Vector2 &v1,const Vector2 &v2);
 	friend bool operator!=(const Vector2 &v1,const Vector2 &v2);
 
 	const Vector2 &operator+()const;
 	Vector2 operator-()const;
-	Vector2 &operator+=(const Vector2 &v1)const;
-	Vector2 &operator-=(const Vector2 &v1)const;
-	Vector2 &operator*=(double scale)const;
+	Vector2 &operator+=(const Vector2 &v1);
+	Vector2 &operator-=(const Vector2 &v1);
+	Vector2 &operator*=(double scale);
 	Vector2 &operator/=(double scale);
 
 	// return the length of the vector
@@ -44,6 +44,6 @@ public:
 	// return the normalized vector of a given vector
 	friend Vector2 normalize(const Vector2 &v);
 private:
-	double e[2];
+	double x,y;
 };
 #endif // VECTOR2_H_
