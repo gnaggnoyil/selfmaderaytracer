@@ -60,7 +60,7 @@ void Engine::parseViewpoint(FILE *f,std::string filename){
 
 	Vector3 axis=lookat-orig;
 	double h=axis.length()*tan(angle/2.0f);
-	camera=std::make_shared<Camera>(Camera(orig,lookat,h*picwidth/picheight,h,hither,animationStack.top()*transforms["camera"]));
+	camera=std::make_shared<Camera>(Camera(orig,lookat,up,h*picwidth/picheight,h,hither,animationStack.top()*transforms["camera"]));
 	return;
 
 fmterr:
@@ -1047,7 +1047,7 @@ Image Engine::render(int frameIndex){
 
 	Image result(picwidth,picheight);
 	for(int y=0;y<picheight;++y)
-		for(int x=0;x<picheight;++x){
+		for(int x=0;x<picwidth;++x){
 			rgb color;
 			double u=(double)x/(double)picwidth;
 			double v=(double)y/(double)picheight;

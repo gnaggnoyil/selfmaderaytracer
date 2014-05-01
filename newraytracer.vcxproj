@@ -90,6 +90,7 @@
     <ClInclude Include="Vector3.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ConstantColorTexture.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Image.cpp" />

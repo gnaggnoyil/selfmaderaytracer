@@ -39,5 +39,6 @@
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="Vector2.cpp" />
     <ClCompile Include="Ray.cpp" />
+    <ClCompile Include="Camera.cpp" />
   </ItemGroup>
 </Project>
