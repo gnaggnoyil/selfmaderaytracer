@@ -4,7 +4,6 @@
 #include "Shape.h"
 #include "Ray.h"
 #include "Material.h"
-#include <memory>
 #include "Vector3.h"
 
 /**
@@ -15,7 +14,7 @@
 class Cylinder:public Shape{
 public:
 	// constructors
-	Cylinder(const Vector3 &_base,double _baseRadius,const Vector3 &_apex,double _apexRadius,const Material &_material,DynamicVector3Type _animation);
+	Cylinder(const Vector3 &_base,double _baseRadius,const Vector3 &_apex,double _apexRadius,const Material &_material,const DynamicVector3Type &_animation);
 	Cylinder(const Cylinder &_orig);
 
 	void setBase(const Vector3 &_base);
@@ -40,5 +39,6 @@ private:
 	double apexRadius;
 	Material material;
 	DynamicVector3Type animation;	// the function that calculates the transform shift of this shape at a certain time
+	bool inside;
 };
 #endif // _CYLINDER_H_

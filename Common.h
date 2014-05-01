@@ -23,6 +23,10 @@ int search(const std::vector<double> &t,double o){
 	return en;
 }
 
+inline double sqr(double x){
+	return x*x;
+}
+
 // defines a functor type used to calculate the vector3 point according time;
 typedef std::function<Vector3(const Vector3 &,double)> DynamicVector3Type;
 

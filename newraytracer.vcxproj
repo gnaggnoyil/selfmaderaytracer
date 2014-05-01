@@ -92,6 +92,7 @@
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ConstantColorTexture.cpp" />
+    <ClCompile Include="Cylinder.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="ImageTexture.cpp" />
