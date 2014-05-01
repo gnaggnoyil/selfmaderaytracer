@@ -40,5 +40,6 @@
     <ClCompile Include="Vector2.cpp" />
     <ClCompile Include="Ray.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Triangle.cpp" />
   </ItemGroup>
 </Project>

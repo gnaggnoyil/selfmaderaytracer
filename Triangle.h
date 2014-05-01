@@ -4,7 +4,6 @@
 #include "Shape.h"
 #include "Ray.h"
 #include "Material.h"
-#include <memory>
 #include "Vector3.h"
 #include "Vector2.h"
 
@@ -20,9 +19,9 @@ public:
 	Triangle(const Triangle &_orig);
 
 	void setVertex(int i,const Vector3 &_vertex);
-	Vector3 getVertex(int i);
+	Vector3 getVertex(int i)const;
 	void setTexCoord(int i,const Vector2 &_texCoord);
-	Vector2 getTexCoord(int i);
+	Vector2 getTexCoord(int i)const;
 	void setMaterial(const Material &_material);
 	Material getMaterial()const;
 	void setAnimation(int i,const DynamicVector3Type &_animation);
