@@ -24,6 +24,7 @@
     <ClInclude Include="Material.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="ImageTexture.h" />
+    <ClInclude Include="Quaternion.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Image.cpp" />
@@ -35,5 +36,6 @@
     <ClCompile Include="ImageTexture.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Vector3.cpp" />
+    <ClCompile Include="Quaternion.cpp" />
   </ItemGroup>
 </Project>

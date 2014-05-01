@@ -45,6 +45,8 @@ public:
 	double sqrLength()const;
 	// return the normalized vector of a given vector
 	friend Vector3 normalize(const Vector3 &v);
+
+	friend Vector3 applyScale(const Vector3 &scale,const Vector3 &p);
 private:
 	double x,y,z;
 };

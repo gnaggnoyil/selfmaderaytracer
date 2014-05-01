@@ -139,3 +139,7 @@ double Vector3 ::sqrLength()const{
 Vector3 normalize(const Vector3 &v){
 	return v/v.length();
 }
+
+Vector3 applyScale(const Vector3 &scale,const Vector3 &p){
+	return Vector3(scale.x*p.x,scale.y*p.y,scale.z*p.z);
+}

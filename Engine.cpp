@@ -21,6 +21,7 @@
 #include "Mesh.h"
 #include "MeshTriangle.h"
 #include "Image.h"
+#include "Quaternion.h"
 
 Engine::Engine(int _maxRenderDepth=6)
 	:maxRenderDepth(_maxRenderDepth),currentMaterial(nullptr,rgb(0,0,0),0,0,0,0,0),background(0,0,0),ambient(1.0f,1.0f,1.0f),
@@ -405,6 +406,9 @@ fmterr:
 }
 
 DynamicVector3Type Engine::parseKeyFramesTranslate(FILE *f,std::string filename,int num){
+	if(num<4)
+		goto fmterr;
+
 	std::vector<double> time,tension,continuity,bias;
 	std::vector<Vector3> shift;
 	for(double x,y,z,a,b,c,t;num>0;--num){
@@ -417,17 +421,48 @@ DynamicVector3Type Engine::parseKeyFramesTranslate(FILE *f,std::string filename,
 		bias.push_back(c);
 	}
 
-	return [&time,&shift,&tension,&continuity,&bias](const Vector3 &_orig,double _time){
-		//these codes are fake, they are used to show the behaviour
-		if(_time<time[0])
-			return _orig+shift[0];
-		if(_time>time[time.size()])
-			return _orig+shift[shift.size()];
-		int i=search(time,_time);
-		if(fabs(time[i]-_time)<DBL_EPSILON)
-			return _orig+shift[i];
-		double c=(time[i]-_time)/(time[i]-time[i-1]);
-		return _orig+shift[i-1]*c+shift[i]*(1-c);
+	std::vector<Vector3> C0,C1,C2,C3;
+	std::vector<double> timepoint;
+
+	for(int i=0;i<shift.size()-3;i++){
+		Vector3 DP=shift[i+2]-shift[i+1];
+
+		double omt0=1-tension[i+1];
+		double omc0=1-continuity[i+1];
+		double omb0=1-bias[i+1];
+		double opc0=1+continuity[i+1];
+		double opb0=1+bias[i+1];
+		double adj0=(time[i+2]-time[i+1])/(time[i+2]-time[i]);
+		double out0=adj0*omt0*omc0*omb0;
+		double out1=adj0*omt0*opc0*opb0;
+		Vector3 Tout=out1*DP+out0*(shift[i+1]-shift[i]);
+
+		double omt1=1-tension[i+2];
+		double omc1=1-continuity[i+2];
+		double omb1=1-bias[i+2];
+		double opc1=1+continuity[i+2];
+		double opb1=1+bias[i+2];
+		double adj1=(time[i+2]-time[i+1])/(time[i+3]-time[i+1]);
+		double in0=adj1*omt1*omc1*omb1;
+		double in1=adj1*omt1*opc1*opb1;
+		Vector3 Tin=in1*(shift[i+3]-shift[i+2])+in0*DP;
+
+		C0.push_back(shift[i+1]);
+		C1.push_back(Tout);
+		C2.push_back(3*DP-2*Tout-Tin);
+		C3.push_back(Tout+Tin-2*DP);
+		timepoint.push_back(time[i+1]);
+	}
+	timepoint.push_back(time[time.size()-2]);
+
+	return [&C0,&C1,&C2,&C3,&timepoint](const Vector3 &_orig,double _time){
+		if(_time<*(timepoint.begin()))
+			return _orig+*C0.begin();
+		if(_time>*(timepoint.end()))
+			return _orig+*C0.end()+*C1.end()+*C2.end()+*C3.end();
+		int i=search(timepoint,_time);
+		double u=(_time-timepoint[i-1])/(timepoint[i]-timepoint[i-1]);
+		return _orig+C0[i-1]+u*(C1[i-1]+u*(C2[i-1]+u*C3[i-1]));
 	};
 fmterr:
 	fprintf(stderr,"parse key frame translation error in file %s at byte %d",filename.c_str(),ftell(f));
@@ -448,24 +483,59 @@ DynamicVector3Type Engine::parseKeyFramesRotate(FILE *f,std::string filename,int
 		bias.push_back(c);
 		angle.push_back(g*M_PI/180.0f);
 	}
-	
-	std::vector<Matrix> srotate;
-	srotate.push_back(rotate(axis[0],angle[0]));
-	for(int i=1;i<angle.size();i++)
-		srotate.push_back(*(srotate.end())*rotate(axis[i],angle[i]));
 
-	return [&time,&axis,&angle,&srotate,&tension,&continuity,&bias](const Vector3 &_orig,double _time){
-		//these codes are fake, they are used to show the behaviour
-		if(_time<time[0])
-			return srotate[0]*_orig;
-		if(_time>time[time.size()])
-			return srotate[srotate.size()]*_orig;
-		int i=search(time,_time);
-		if(fabs(time[i]-_time)<DBL_EPSILON)
-			return srotate[i]*_orig;
-		double c=(time[i]-_time)/(time[i]-time[i-1]);
-		double a=angle[i-1]*(1-c);
-		return srotate[i-1]*rotate(axis[i-1],a)*_orig;
+	std::vector<Quaternion> p,a,b,q;
+	std::vector<double> timepoint;
+
+	for(int i=0;i<axis.size()-3;i++){
+		Quaternion q0(angle[i],axis[i]);
+		Quaternion q1(angle[i+1],axis[i+1]);
+		Quaternion q2(angle[i+2],axis[i+2]);
+		Quaternion q3(angle[i+3],axis[i+3]);
+		if(dot(q1,q2)<0.0f){
+			q2=-q2;
+			angle[i+2]=q2.getAngle();
+			axis[i+2]=q2.getAxis();
+		}
+
+		Quaternion logdq=log(q1.inverse()*q2);
+
+		double omt0=1-tension[i+1];
+		double omc0=1-continuity[i+1];
+		double omb0=1-bias[i+1];
+		double opc0=1+continuity[i+1];
+		double opb0=1+bias[i+1];
+		double adj0=(time[i+2]-time[i+1])/(time[i+2]-time[i]);
+		double out0=adj0*omt0*omc0*omb0;
+		double out1=adj0*omt0*opc0*opb0;
+		Quaternion Tout=out1*logdq+out0*log(q0.inverse()*q1);
+
+		double omt1=1-tension[i+2];
+		double omc1=1-continuity[i+2];
+		double omb1=1-bias[i+2];
+		double opc1=1+continuity[i+2];
+		double opb1=1+bias[i+2];
+		double adj1=(time[i+2]-time[i+1])/(time[i+3]-time[i+1]);
+		double in0=adj1*omt1*omc1*omb1;
+		double in1=adj1*omt1*opc1*opb1;
+		Quaternion Tin=in1*log(q2.inverse()*q3)+in0*logdq;
+
+		p.push_back(q1);
+		q.push_back(q2);
+		a.push_back(q1*exp(0.5f*(Tout-logdq)));
+		b.push_back(q2*exp(0.5f*(Tin-logdq)));
+		timepoint.push_back(time[i+1]);
+	}
+	timepoint.push_back(time[time.size()-2]);
+
+	return [&p,&q,&a,&b,&timepoint](const Vector3 &_orig,double _time){
+		if(_time<*timepoint.begin())
+			return applyRotate(*p.begin(),_orig);
+		if(_time>*timepoint.end())
+			return applyRotate(*q.end(),_orig);
+		int i=search(timepoint,_time);
+		double u=(_time-timepoint[i-1])/(timepoint[i]-timepoint[i-1]);
+		return applyRotate(slerp(2*u*(1-u),slerp(u,p[i-1],q[i-1]),slerp(u,a[i-1],b[i-1])),_orig);
 	};
 fmterr:
 	fprintf(stderr,"parse key frame rotation error in file %s at byte %d",filename.c_str(),ftell(f));
@@ -486,18 +556,48 @@ DynamicVector3Type Engine::parseKeyFramesScale(FILE *f,std::string filename,int 
 		bias.push_back(c);
 	}
 
-	return [&time,&scale,&tension,&continuity,&bias](const Vector3 &_orig,double _time){
-		//these codes are fake, they are used to show the behaviour
-		if(_time<time[0])
-			return Vector3(_orig[0]*scale[0][0],_orig[1]*scale[0][1],_orig[2]*scale[0][2]);
-		if(_time>time[time.size()])
-			return Vector3(_orig[0]*scale[scale.size()][0],_orig[1]*scale[scale.size()][1],_orig[2]*scale[scale.size()][2]);
-		int i=search(time,_time);
-		if(fabs(time[i]-_time)<DBL_EPSILON)
-			return Vector3(_orig[0]*scale[i][0],_orig[1]*scale[i][1],_orig[2]*scale[i][2]);
-		double c=(time[i]-_time)/(time[i]-time[i-1]);
-		Vector3 scaleV=scale[i-1]*c+scale[i]*(1-c);
-		return Vector3(_orig[0]*scaleV[0],_orig[1]*scaleV[1],_orig[2]*scaleV[2]);
+	std::vector<Vector3> C0,C1,C2,C3;
+	std::vector<double> timepoint;
+
+	for(int i=0;i<scale.size()-3;i++){
+		Vector3 DP=scale[i+2]-scale[i+1];
+
+		double omt0=1-tension[i+1];
+		double omc0=1-continuity[i+1];
+		double omb0=1-bias[i+1];
+		double opc0=1+continuity[i+1];
+		double opb0=1+bias[i+1];
+		double adj0=(time[i+2]-time[i+1])/(time[i+2]-time[i]);
+		double out0=adj0*omt0*omc0*omb0;
+		double out1=adj0*omt0*opc0*opb0;
+		Vector3 Tout=out1*DP+out0*(scale[i+1]-scale[i]);
+
+		double omt1=1-tension[i+2];
+		double omc1=1-continuity[i+2];
+		double omb1=1-bias[i+2];
+		double opc1=1+continuity[i+2];
+		double opb1=1+bias[i+2];
+		double adj1=(time[i+2]-time[i+1])/(time[i+3]-time[i+1]);
+		double in0=adj1*omt1*omc1*omb1;
+		double in1=adj1*omt1*opc1*opb1;
+		Vector3 Tin=in1*(scale[i+3]-scale[i+2])+in0*DP;
+
+		C0.push_back(scale[i+1]);
+		C1.push_back(Tout);
+		C2.push_back(3*DP-2*Tout-Tin);
+		C3.push_back(Tout+Tin-2*DP);
+		timepoint.push_back(time[i+1]);
+	}
+	timepoint.push_back(time[time.size()-2]);
+
+	return [&C0,&C1,&C2,&C3,&timepoint](const Vector3 &_orig,double _time){
+		if(_time<*(timepoint.begin()))
+			return applyScale(*C0.begin(),_orig);
+		if(_time>*(timepoint.end()))
+			return applyScale(*C0.end()+*C1.end()+*C2.end()+*C3.end(),_orig);
+		int i=search(timepoint,_time);
+		double u=(_time-timepoint[i-1])/(timepoint[i]-timepoint[i-1]);
+		return applyScale(C0[i-1]+u*(C1[i-1]+u*(C2[i-1]+u*C3[i-1])),_orig);
 	};
 fmterr:
 	fprintf(stderr,"parse key frame scaling error in file %s at byte %d",filename.c_str(),ftell(f));

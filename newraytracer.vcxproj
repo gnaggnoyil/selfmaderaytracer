@@ -78,6 +78,7 @@
     <ClInclude Include="MeshTriangle.h" />
     <ClInclude Include="Polygon.h" />
     <ClInclude Include="PolygonalPatch.h" />
+    <ClInclude Include="Quaternion.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="rgb.h" />
     <ClInclude Include="Shape.h" />
@@ -95,6 +96,7 @@
     <ClCompile Include="ImageTexture.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="rgb.cpp" />
     <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Vector3.cpp" />
