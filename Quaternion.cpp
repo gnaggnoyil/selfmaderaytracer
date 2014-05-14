@@ -8,16 +8,6 @@ Quaternion::Quaternion()
 Quaternion::Quaternion(double _w,double _x,double _y,double _z)
 	:w(_w),x(_x),y(_y),z(_z){}
 
-Quaternion::Quaternion(double _angle,double _x,double _y,double _z){
-	Vector3 _axis(_x,_y,_z);
-	_axis=normalize(_axis);
-	double sn=sin(0.5f*_angle);
-	w=cos(0.5f*_angle);
-	x=sn*_axis.getX();
-	y=sn*_axis.getY();
-	z=sn*_axis.getZ();
-}
-
 Quaternion::Quaternion(double _angle,const Vector3 &_axis){
 	Vector3 axis=normalize(_axis);
 	double sn=sin(0.5f*_angle);
@@ -215,8 +205,8 @@ Quaternion Quaternion::inverse()const{
 	return Quaternion(w,-x,-y,-z)/sqrNorm();
 }
 
-Vector3 applayRotate(Quaternion &q,Vector3 &p){
-	Quaternion res=q*Quaternion(0.0f,p)*q.inverse();
+Vector3 applyRotate(const Quaternion &q,const Vector3 &p){
+	Quaternion res=q*Quaternion(0.0f,p.getX(),p.getY(),p.getZ())*q.inverse();
 	return res.getVector();
 }
 

@@ -26,7 +26,7 @@ public:
 	int getHeight()const;
 
 	// write the PPM data to a ostream, returns false if fails
-	bool writePPM(std::ostream &out);
+	bool writePPM(std::ofstream &out);
 private:
 	int nx,ny;
 	rgb **data;

@@ -97,5 +97,8 @@ double Material::getRefractionIndex()const{
 }
 
 rgb Material::calcColor(const Vector2 &uv,const Vector3 &p){
-	return tex->value(uv,p);
+	if(tex!=nullptr)
+		return tex->value(uv,p);
+	else
+		return color;
 }

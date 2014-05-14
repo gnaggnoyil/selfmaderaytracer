@@ -42,5 +42,13 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Triangle.cpp" />
     <ClCompile Include="Cylinder.cpp" />
+    <ClCompile Include="TrianglePatch.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MeshTriangle.cpp" />
+    <ClCompile Include="Polygon.cpp" />
+    <ClCompile Include="PolygonalPatch.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Common.cpp" />
+    <ClCompile Include="Matrix.cpp" />
   </ItemGroup>
 </Project>

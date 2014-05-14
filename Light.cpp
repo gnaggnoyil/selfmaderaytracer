@@ -7,7 +7,7 @@ Light::Light(const rgb &_color,const Vector3 &_p,const DynamicVector3Type &_anim
 	:color(_color),p(_p),animation(_animation){}
 
 Light::Light(const Light &_orig)
-	:color(_orig.getColor()),p(_orig.getP()),animation(_orig.getAnimation){}
+	:color(_orig.getColor()),p(_orig.getP()),animation(_orig.getAnimation()){}
 
 void Light::setColor(const rgb &_color){
 	color=_color;

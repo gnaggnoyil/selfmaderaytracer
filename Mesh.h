@@ -4,7 +4,6 @@
 #include <vector>
 #include "Vector2.h"
 #include "Vector3.h"
-#include <memory>
 #include "Material.h"
 
 /**
@@ -20,11 +19,14 @@ public:
 	Mesh(const Mesh &_orig);
 
 	void setVertex(int i,const Vector3 &_vertex);
-	Vector3 getVertex(int i);
+	Vector3 getVertex(int i)const;
+	int getVertexNum()const;
 	void setNormal(int i,const Vector3 &_normal);
-	Vector3 getNormal(int i);
+	Vector3 getNormal(int i)const;
+	int getNormalNum()const;
 	void setTexCoord(int i,const Vector2 &_texCoord);
-	Vector2 getTexCoord(int i);
+	Vector2 getTexCoord(int i)const;
+	int getTexCoordNum()const;
 	void setMaterial(const Material &_material);
 	Material getMaterial()const;
 
@@ -34,6 +36,6 @@ private:
 	std::vector<Vector3> vertex;
 	std::vector<Vector3> normal;
 	std::vector<Vector2> texCoord;
-	std::tr1::shared_ptr<Material> material;
+	Material material;
 };
 #endif // _MESH_H_

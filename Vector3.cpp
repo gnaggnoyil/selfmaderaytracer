@@ -83,7 +83,7 @@ Vector3 cross(const Vector3 &v1,const Vector3 &v2){
 }
 
 double dot(const Vector3 &v1,const Vector3 &v2){
-	return v1.getX()*v2.getX()+v1.getY()*v2.getY()-v1.getZ()*v2.getZ();
+	return v1.getX()*v2.getX()+v1.getY()*v2.getY()+v1.getZ()*v2.getZ();
 }
 
 bool operator==(const Vector3 &v1,const Vector3 &v2){
@@ -138,6 +138,10 @@ double Vector3 ::sqrLength()const{
 
 Vector3 normalize(const Vector3 &v){
 	return v/v.length();
+}
+
+double sqr(const Vector3 &v){
+	return v.sqrLength();
 }
 
 Vector3 applyScale(const Vector3 &scale,const Vector3 &p){

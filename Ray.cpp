@@ -28,6 +28,7 @@ bool operator==(const Ray &r1,const Ray &r2){
 		return false;
 	if(r1.direction!=r2.direction)
 		return false;
+	return true;
 }
 
 bool operator!=(const Ray &r1,const Ray &r2){

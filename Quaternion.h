@@ -7,7 +7,6 @@ class Quaternion{
 public:
 	Quaternion();
 	Quaternion(double _w,double _x,double _y,double _z);
-	Quaternion(double _angle,double _x,double _y,double _z);
 	Quaternion(double _angle,const Vector3 &_axis);
 	Quaternion(const Quaternion &_orig);
 
@@ -53,7 +52,7 @@ public:
 	Quaternion inverse()const;
 
 	friend Vector3 applyRotate(const Quaternion &q,const Vector3 &p);
-	friend Quaternion slerp(double t,const Quaternion &p,Quaternion &q);
+	friend Quaternion slerp(double t,const Quaternion &p,const Quaternion &q);
 private:
 	double w,x,y,z;
 };

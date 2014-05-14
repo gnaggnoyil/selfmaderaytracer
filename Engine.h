@@ -34,24 +34,37 @@ private:
 	// parser methods
 	void parseComment(FILE *f,std::string filename);
 	void parseViewpoint(FILE *f,std::string filename);
+	void parseViewpointPass1(FILE *f,std::string filename);
 	void parseLight(FILE *f,std::string filename);
+	void parseLightPass1(FILE *f,std::string filename);
 	void parseBackground(FILE *f,std::string filename);
+	void parseBackgroundPass1(FILE *f,std::string filename);
 	void parseFill(FILE *f,std::string filename);
+	void parseFillPass1(FILE *f,std::string filename);
 	void parseCone(FILE *f,std::string filename);
+	void parseConePass1(FILE *f,std::string filename);
 	void parseSphere(FILE *f,std::string filename);
+	void parseSpherePass1(FILE *f,std::string filename);
 	void parsePoly(FILE *f,std::string filename);
+	void parsePolyPass1(FILE *f,std::string filename);
 	void parseInclude(FILE *f,std::string filename,int pass);
 	void parseDetailLevel(FILE *f,std::string filename);
 	void parseAnimatedTriangle(FILE *f,std::string filename);
+	void parseAnimatedTrianglePass1(FILE *f,std::string filename);
 	void parseTriangle(FILE *f,std::string filename);
+	void parseTrianglePass1(FILE *f,std::string filename);
 	DynamicVector3Type parseKeyFramesTranslate(FILE *f,std::string filename,int num);
 	DynamicVector3Type parseKeyFramesRotate(FILE *f,std::string filename,int num);
 	DynamicVector3Type parseKeyFramesScale(FILE *f,std::string filename,int num);
 	void parseKeyFrames(FILE *f,std::string filename);
 	void parseXform(FILE *f,std::string filename);
+	void parseXformPass1(FILE *f,std::string filename);
 	void parseAmbient(FILE *f,std::string filename);
+	void parseAmbientPass1(FILE *f,std::string filename);
 	void parseA(FILE *f,std::string filename);
+	void parseAPass1(FILE *f,std::string filename);
 	void parseMesh(FILE *f,std::string filename);
+	void parseMeshPass1(FILE *f,std::string filename);
 	bool parseFilePass1(FILE *f,std::string filename);	// pass 1 to get key frame animation names
 	bool parseFilePass2(FILE *f,std::string filename);
 
@@ -67,5 +80,6 @@ private:
 	int currentDetailLevel;
 	double starttime,endtime;
 	int numframes;
+	std::string rootpath;
 };
 #endif // _ENGINE_H_

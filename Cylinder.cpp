@@ -74,7 +74,7 @@ bool Cylinder::hit(const Ray &r,double tmax,double time,HitRecord &record)const{
 	Vector3 _base=animation(base,time);
 	Vector3 _apex=animation(apex,time);
 
-	Vector3 _orig=baseRadius/apexRadius*_apex+(apexRadius-baseRadius)/apexRadius*_base;
+	/*Vector3 _orig=baseRadius/apexRadius*_apex+(apexRadius-baseRadius)/apexRadius*_base;
 	Vector3 d=base-apex;
 	Vector3 o=r.getOrigin()-_orig;
 	Vector3 dir=r.getDirection();
@@ -83,15 +83,31 @@ bool Cylinder::hit(const Ray &r,double tmax,double time,HitRecord &record)const{
 
 	double a=sqr(dot(dir,d))-dot(dir,dir)*dot(d,d)*cos2;
 	double b=2.0f*dot(dir,d)*dot(o,d)-sqr(dot(dir,o))*dot(d,d)*cos2;
-	double c=sqr(dot(o,d))-dot(o,o)*dot(d,d)*cos2;
+	double c=sqr(dot(o,d))-dot(o,o)*dot(d,d)*cos2;*/
+
+	Vector3 pa=base+(apex-base)*baseRadius/(baseRadius-apexRadius);
+	Vector3 _orig=pa;
+	Vector3 d=apex-base;
+	double tan2=sqr(apexRadius-baseRadius)/d.sqrLength();
+	Vector3 va=normalize(d);
+
+	Vector3 p=r.getOrigin();
+	Vector3 v=r.getDirection();
+	double cos2=1/(tan2+1);
+	double sin2=1-cos2;
+	Vector3 deltap=p-pa;
+
+	double a=cos2*sqr(v-dot(v,va)*va)-sin2*sqr(dot(v,va));
+	double b=2*cos2*dot(v-dot(v,va)*va,deltap-dot(deltap,va)*va)-2*sin2*dot(v,va)*dot(deltap,va);
+	double c=cos2*sqr(deltap-dot(deltap,va)*va)-sin2*sqr(dot(deltap,va));
 
 	double discriminant=b*b-4*a*c;
 	if(discriminant>=0.0f){
 		discriminant=sqrt(discriminant);
 		double t1=(-b-discriminant)/(2.0f*a);
 		double t2=(-b+discriminant)/(2.0f*a);
-		auto lambda=[&](const Vector3 &p){
-			double t=dot(p-_orig,d)/d.length();
+		auto lambda=[&](const Vector3 &pp){
+			double t=-dot(pp-_orig,d)/d.length();
 			if(t<apexRadius/(baseRadius-apexRadius)*d.length())
 				return false;
 			if(t>baseRadius/(baseRadius-apexRadius)*d.length())

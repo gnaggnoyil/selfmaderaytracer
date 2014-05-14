@@ -14,7 +14,7 @@ Image::Image(const Image &_orig){
 	}
 }
 
-Image::Image(int _width,int _height,const rgb &background=rgb(0,0,0))
+Image::Image(int _width,int _height,const rgb &background)
 	:nx(_width),ny(_height){
 	data=new rgb*[nx];
 	for(int i=0;i<nx;i++){
@@ -54,11 +54,11 @@ Image::~Image(){
 	delete[] data;
 }
 
-inline rgb Image::getRGB(int i,int j)const{
+rgb Image::getRGB(int i,int j)const{
 	return data[i][j];
 }
 
-inline bool Image::setRGB(int i,int j,const rgb &_color){
+bool Image::setRGB(int i,int j,const rgb &_color){
 	if((i<0)||(i>=nx))
 		return false;
 	if((j<0)||(j>=ny))
@@ -67,20 +67,20 @@ inline bool Image::setRGB(int i,int j,const rgb &_color){
 	return true;
 }
 
-inline int Image::getWidth()const{
+int Image::getWidth()const{
 	return nx;
 }
 
-inline int Image::getHeight()const{
+int Image::getHeight()const{
 	return ny;
 }
 
-bool Image::writePPM(std::ostream &out){
+bool Image::writePPM(std::ofstream &out){
 	out<<"P6"<<std::endl;
 	out<<nx<<' '<<ny<<std::endl;
 	out<<"255"<<std::endl;
 	unsigned int r,g,b;
-	for(int i=ny-1;i>0;--i)
+	for(int i=0;i<ny;i++)
 		for(int j=0;j<nx;j++){
 			r=(unsigned int)(256*data[j][i].getR());
 			g=(unsigned int)(256*data[j][i].getG());
@@ -92,4 +92,5 @@ bool Image::writePPM(std::ostream &out){
 			out.put((unsigned char)g);
 			out.put((unsigned char)b);
 		}
+	return true;
 }

@@ -18,7 +18,7 @@ public:
 	double getData(int i,int j)const;
 
 	// returns the determinant of this matrix
-	double determinant();
+	double determinant()const;
 	
 	Matrix getInvert()const;
 	// returns true if invert succeed, otherwise false

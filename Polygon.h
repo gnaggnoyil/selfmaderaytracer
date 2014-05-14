@@ -4,7 +4,6 @@
 #include "Shape.h"
 #include "Ray.h"
 #include "Material.h"
-#include <memory>
 #include "Vector3.h"
 #include <vector>
 
@@ -14,18 +13,18 @@
 class Polygon:public Shape{
 public:
 	// constructors
-	Polygon(const std::vector<Vector3> &_vertex,const Material &_material,DynamicVector3Type _animation);
+	Polygon(const std::vector<Vector3> &_vertex,const Material &_material,const DynamicVector3Type &_animation);
 	Polygon(const Polygon &_orig);
 
 	void setVertex(int i,const Vector3 &_vertex);
-	std::vector<Vector3> getVertex(int i);
+	Vector3 getVertex(int i)const;
+	int getVertexNum()const;
 	void setMaterial(const Material &_material);
 	Material getMaterial()const;
 	void setAnimation(const DynamicVector3Type &_animation);
 	DynamicVector3Type getAnimation()const;
 
 	void addVertex(const Vector3 &_vertex);
-	int getVertexNumber();
 
 	// implements the hit method of the Shape class
 	bool hit(const Ray &r,double tmax,double time,HitRecord &record)const;

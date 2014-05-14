@@ -67,7 +67,7 @@ DynamicVector3Type Camera::getAnimation()const{
 	return animation;
 }
 
-Ray Camera::getRay(const Vector2 &uv,double time=0.0f){
+Ray Camera::getRay(const Vector2 &uv,double time){
 	double u=uv.getX();
 	double v=uv.getY();
 
@@ -80,10 +80,10 @@ Ray Camera::getRay(const Vector2 &uv,double time=0.0f){
 	return Ray(_orig,normalize(point-_orig));
 }
 
-Ray Camera::getRay(double u,double v,double time=0.0f){
+Ray Camera::getRay(double u,double v,double time){
 	Vector3 _orig=animation(orig,time);
 	Vector3 _lookat=animation(lookat,time);
-	Vector3 _up=normalize(animation(up,time));
+	Vector3 _up=up;//normalize(animation(up,time));
 
 	Vector3 _right=normalize(cross(_up,_orig-_lookat));
 	Vector3 point=_lookat+(u-0.5)*cameraWidth*_right+(v-0.5)*cameraHeight*_up;
